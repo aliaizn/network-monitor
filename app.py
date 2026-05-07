@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask import send_from_directory
 import psycopg2
 import psycopg2.extras  # for dict-like rows
 import os
@@ -22,6 +23,11 @@ def get_db_connection():
     #This makes rows behave like dictionaries (column: value)
     conn.cursor_factory = psycopg2.extras.RealDictCursor
     return conn
+
+@app.route('/')
+def index():
+    return send_from_directory(app.root_path, 'index.html')
+    # return send_from_directory(os.path.join(app.root_path, '..'), 'index.html')
 
 @app.route('/devices', methods=['GET', 'POST'])
 def devices():

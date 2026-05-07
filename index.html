@@ -1,0 +1,134 @@
+   <!DOCTYPE html>
+   <html lang="en">
+   <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Network Monitor</title>
+     <style>
+       body { font-family: Arial, sans-serif; margin: 2em; background: #f5f5f5; }
+       h1 { color: #333; }
+       table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+       th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+       th { background-color: #4CAF50; color: white; }
+       tr:nth-child(even) { background-color: #f2f2f2; }
+       .up { color: green; font-weight: bold; }
+       .down { color: red; font-weight: bold; }
+       .error { color: red; }
+       .section { background: white; padding: 1em; margin-top: 2em; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+     </style>
+   </head>
+   <body>
+     <h1>Network Monitoring Dashboard</h1>
+
+     <div class="section">
+       <h2>Devices</h2>
+       <table id="devices-table">
+         <thead>
+           <tr>
+             <th>ID</th>
+             <th>Name</th>
+             <th>IP Address</th>
+             <th>Type</th>
+             <th>Latest Status</th>
+           </tr>
+         </thead>
+         <tbody id="devices-body">
+         </tbody>
+       </table>
+     </div>
+
+     <div class="section">
+       <h2>Recent Pings</h2>
+       <table id="pings-table">
+         <thead>
+           <tr>
+             <th>Device</th>
+             <th>IP</th>
+             <th>Status</th>
+             <th>Latency (ms)</th>
+             <th>Time</th>
+           </tr>
+         </thead>
+         <tbody id="pings-body">
+         </tbody>
+       </table>
+     </div>
+
+     <script>
+       const API = ''; // Same origin
+
+       async function loadDevices() {
+         try {
+           const res = await fetch('/devices');
+           const devices = await res.json();
+           const tbody = document.getElementById('devices-body');
+           tbody.innerHTML = '';
+           if (devices.length === 0) {
+             tbody.innerHTML = '<tr><td colspan="5">No devices found.</td></tr>';
+             return;
+           }
+           for (const d of devices) {
+             // Fetch latest ping for this device to get current status
+             let status = 'Unknown';
+             try {
+               const pingRes = await fetch(`/devices/${d.id}/pings`);
+               const pings = await pingRes.json();
+               if (pings.length > 0) {
+                 status = pings[0].status ? '<span class="up">UP</span>' : '<span class="down">DOWN</span>';
+               }
+             } catch (e) { status = '<span class="error">Error</span>'; }
+
+             const row = `<tr>
+               <td>${d.id}</td>
+               <td>${escapeHtml(d.name)}</td>
+               <td>${escapeHtml(d.ip_address)}</td>
+               <td>${escapeHtml(d.device_type)}</td>
+               <td>${status}</td>
+             </tr>`;
+             tbody.innerHTML += row;
+           }
+         } catch (e) {
+           document.getElementById('devices-body').innerHTML = '<tr><td colspan="5" class="error">Failed to load devices.</td></tr>';
+         }
+       }
+
+       async function loadPings() {
+         try {
+           const res = await fetch('/pings');
+           const pings = await res.json();
+           const tbody = document.getElementById('pings-body');
+           tbody.innerHTML = '';
+           if (pings.length === 0) {
+             tbody.innerHTML = '<tr><td colspan="5">No pings recorded.</td></tr>';
+             return;
+           }
+           for (const p of pings) {
+             const statusHtml = p.status ? '<span class="up">UP</span>' : '<span class="down">DOWN</span>';
+             const latency = p.latency_ms ? p.latency_ms.toFixed(2) : 'N/A';
+             const time = new Date(p.pinged_at).toLocaleString();
+             const row = `<tr>
+               <td>${escapeHtml(p.name)}</td>
+               <td>${escapeHtml(p.ip_address)}</td>
+               <td>${statusHtml}</td>
+               <td>${latency}</td>
+               <td>${time}</td>
+             </tr>`;
+             tbody.innerHTML += row;
+           }
+         } catch (e) {
+           document.getElementById('pings-body').innerHTML = '<tr><td colspan="5" class="error">Failed to load pings.</td></tr>';
+         }
+       }
+
+       function escapeHtml(text) {
+         const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+         return String(text).replace(/[&<>"']/g, m => map[m]);
+       }
+
+       // Initial load and refresh every 30 seconds
+       loadDevices();
+       loadPings();
+       setInterval(() => { loadDevices(); loadPings(); }, 30000);
+     </script>
+   </body>
+   </html>
