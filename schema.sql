@@ -17,8 +17,8 @@ CREATE TABLE pings (
        device_id INTEGER NOT NULL,
        status BOOLEAN NOT NULL,
        latency_ms REAL,
-       pinged_at TIMESTAMP DEFAULT CURRENT TIMESTAMP,
-       FOREING KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
+       pinged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
 );
 
 
