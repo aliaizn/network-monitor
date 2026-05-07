@@ -1,14 +1,15 @@
 from flask import Flask, request, jsonify
 import psycopg2
 import psycopg2.extras  # for dict-like rows
+import os
 
 app = Flask(__name__)
 
 #Database configuration (same as collector)
-DB_HOST = "localhost"
-DB_NAME = "monitoring"
-DB_USER = "postgres"
-DB_PASS = "devpass"
+DB_HOST = os.environ.get("DB_HOST", "localhost")
+DB_NAME = os.environ.get("DB_NAME", "monitoring")
+DB_USER = os.environ.get("DB_USER", "postgres")
+DB_PASS = os.environ.get("DB_PASS", "devpass")
 
 def get_db_connection():
     """Return a database connection and configuration row factory."""
